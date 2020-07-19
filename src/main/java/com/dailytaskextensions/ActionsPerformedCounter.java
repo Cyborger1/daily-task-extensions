@@ -31,11 +31,11 @@ import lombok.Value;
 
 @Value
 @Builder
-public class ChronicleCardCount
+public class ActionsPerformedCounter
 {
-	@SerializedName("cb")
-	int cardsBought;
-	@SerializedName("lr")
-	int lastReset;
+	@SerializedName("ap")
+	int actionsPerformed;
+	@SerializedName("ld")
+	int lastDay;
 }
 

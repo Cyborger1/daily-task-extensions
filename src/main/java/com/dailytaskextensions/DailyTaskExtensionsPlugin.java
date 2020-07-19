@@ -25,8 +25,6 @@
  */
 package com.dailytaskextensions;
 
-import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -41,19 +39,11 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.http.api.RuneLiteAPI;
-
 import javax.inject.Inject;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Daily Chronicle",
+	name = "Daily Task Extensions",
 	description = "Reminds you to buy teleport cards from Diango upon login",
 	tags = {"daily", "task", "indicator", "chronicle", "teleport", "card"}
 )
@@ -82,10 +72,11 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	private ChatMessageManager chatMessageManager;
 
 	private long lastReset;
+	private int lastDay;
 	private boolean loggingIn;
 	private boolean isPastDailyReset;
 
-	private Map<String, ChronicleCardCount> chronicleMap;
+	private UserActionsMap chronicleMap;
 	private boolean inChronicleShop;
 	private int lastCardCount;
 
@@ -93,7 +84,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		loggingIn = true;
-		setChronicleMapFromConfig();
+		chronicleMap = new UserActionsMap(TELEPORT_CARDS_MAX, config.getChronicleBoughtJSON());
 		inChronicleShop = false;
 		lastCardCount = 0;
 		isPastDailyReset = false;
@@ -103,6 +94,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		lastReset = 0L;
+		lastDay = 0;
 		chronicleMap = null;
 		inChronicleShop = false;
 		lastCardCount = 0;
@@ -145,6 +137,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		{
 			// Round down to the nearest day
 			lastReset = currentTime - (currentTime % ONE_DAY);
+			lastDay = (int) (lastReset / ONE_DAY);
 			loggingIn = false;
 
 			if (config.showChronicle())
@@ -181,7 +174,16 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		// Update the chronicle card count for the current user if the number of cards in inventory increased.
 		if (inChronicleShop && !isPastDailyReset && event.getContainerId() == InventoryID.INVENTORY.getId())
 		{
-			updateChronicleCardsForCurrentUser();
+			synchronized (this)
+			{
+				final int newCardCount = countTeleportCardsInInventory();
+				if (newCardCount > lastCardCount)
+				{
+					chronicleMap.addCountForUser(client.getUsername(), lastDay, newCardCount - lastCardCount);
+					putChronicleMapInConfig();
+				}
+				lastCardCount = newCardCount;
+			}
 		}
 	}
 
@@ -192,9 +194,12 @@ public class DailyTaskExtensionsPlugin extends Plugin
 			&& event.getType() == ChatMessageType.GAMEMESSAGE
 			&& event.getMessage().equals(CHRONICLE_MAXED_CHAT))
 		{
-			if (getCardCountForCurrentUser().getCardsBought() < TELEPORT_CARDS_MAX)
+			final String user = client.getUsername();
+			final ActionsPerformedCounter cards = chronicleMap.getCountForUser(user, lastDay);
+			if (cards.getActionsPerformed() < TELEPORT_CARDS_MAX)
 			{
-				setCardCountForCurrentUser(TELEPORT_CARDS_MAX);
+				chronicleMap.setCountForUser(user, lastDay, TELEPORT_CARDS_MAX);
+				putChronicleMapInConfig();
 			}
 		}
 	}
@@ -202,9 +207,9 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	private void checkChronicle()
 	{
 		// Getter automatically resets to 0 if a day has passed
-		final ChronicleCardCount cardCount = getCardCountForCurrentUser(false);
+		final ActionsPerformedCounter cardCount = chronicleMap.getCountForUser(client.getUsername(), lastDay, false);
 		final int cardsLeft = TELEPORT_CARDS_MAX -
-			(cardCount != null ? cardCount.getCardsBought() : 0);
+			(cardCount != null ? cardCount.getActionsPerformed() : 0);
 		if (cardsLeft > 0)
 		{
 			sendChatMessage(String.format(CHRONICLE_MESSAGE, cardsLeft));
@@ -226,94 +231,15 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	}
 
 	/**
-	 * Sets the instance of the chronicle map from the hidden config field.
+	 * Puts the contents of the chronicle map in the hidden config field if dirty.
 	 */
-	private void setChronicleMapFromConfig()
+	private synchronized void putChronicleMapInConfig()
 	{
-		final InputStream in = new ByteArrayInputStream(config.getChronicleBoughtJSON().getBytes());
-		final Type typeToken = new TypeToken<Map<String, ChronicleCardCount>>()
+		if (chronicleMap.isDirty())
 		{
-		}.getType();
-		try
-		{
-			chronicleMap = RuneLiteAPI.GSON.fromJson(new InputStreamReader(in), typeToken);
+			config.setChronicleBoughtJSON(chronicleMap.getJSONString());
+			chronicleMap.setDirty(false);
 		}
-		catch (JsonParseException ex)
-		{
-			chronicleMap = new HashMap<>();
-		}
-	}
-
-	/**
-	 * Puts the contents of the chronicle map in the hidden config field.
-	 */
-	private void putChronicleMapInConfig()
-	{
-		config.setChronicleBoughtJSON(RuneLiteAPI.GSON.toJson(chronicleMap));
-	}
-
-	/**
-	 * Sets the number of cards bought for the current user.
-	 *
-	 * @param cards The number of cards.
-	 * @return The saved card count object for the current user.
-	 */
-	private ChronicleCardCount setCardCountForCurrentUser(int cards)
-	{
-		final ChronicleCardCount cardCount =
-			ChronicleCardCount.builder()
-				.cardsBought(cards)
-				.lastReset((int) (lastReset / ONE_DAY)).build();
-		chronicleMap.put(client.getUsername(), cardCount);
-		putChronicleMapInConfig();
-		return cardCount;
-	}
-
-	/**
-	 * Adds a number of cards to the card count object for the current user.
-	 *
-	 * @param cardsToAdd The number of cards to add.
-	 * @return The saved card count object for the current user. Null is the user is already at max for today.
-	 */
-	private ChronicleCardCount addCardCountForCurrentUser(int cardsToAdd)
-	{
-		final int oldCount = getCardCountForCurrentUser().getCardsBought();
-		if (oldCount < TELEPORT_CARDS_MAX)
-		{
-			return setCardCountForCurrentUser(oldCount + cardsToAdd);
-		}
-		else
-		{
-			return null;
-		}
-	}
-
-	/**
-	 * Gets the card count object from the chronicle map for the current user.
-	 * <p>
-	 * Initializes a new object with 0 cards and adds it to the map if the current user is not found
-	 * or if the current user's last card reset was more than a day ago.
-	 *
-	 * @param setIfMissingOrNewDay If true, create and save a new card object, else return null.
-	 * @return The card count object for the current user.
-	 */
-	private ChronicleCardCount getCardCountForCurrentUser(boolean setIfMissingOrNewDay)
-	{
-		final ChronicleCardCount cardCount = chronicleMap.get(client.getUsername());
-		if (cardCount == null || (System.currentTimeMillis() / ONE_DAY) > cardCount.getLastReset())
-		{
-			if (!setIfMissingOrNewDay)
-			{
-				return null;
-			}
-			return setCardCountForCurrentUser(0);
-		}
-		return cardCount;
-	}
-
-	private ChronicleCardCount getCardCountForCurrentUser()
-	{
-		return getCardCountForCurrentUser(true);
 	}
 
 	/**
@@ -336,15 +262,5 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		{
 			inChronicleShop = false;
 		}
-	}
-
-	private synchronized void updateChronicleCardsForCurrentUser()
-	{
-		final int newCardCount = countTeleportCardsInInventory();
-		if (newCardCount > lastCardCount)
-		{
-			addCardCountForCurrentUser(newCardCount - lastCardCount);
-		}
-		lastCardCount = newCardCount;
 	}
 }
