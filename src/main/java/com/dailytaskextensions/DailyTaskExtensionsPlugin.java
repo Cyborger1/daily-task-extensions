@@ -105,12 +105,6 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onUsernameChanged(UsernameChanged event)
-	{
-		loadUserActions();
-	}
-
-	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		final GameState state = event.getGameState();
@@ -118,6 +112,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		{
 			if (state == GameState.LOGGING_IN)
 			{
+				loadUserActions();
 				loggingIn = true;
 			}
 			isPastDailyReset = false;
