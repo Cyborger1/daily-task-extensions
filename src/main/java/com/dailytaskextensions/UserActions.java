@@ -26,17 +26,14 @@
 package com.dailytaskextensions;
 
 import lombok.Getter;
-import lombok.Setter;
 
 public class UserActions
 {
 	private int actionsPerformed;
 	private int lastDay;
-	private final int maxActions;
 
 	@Getter
-	@Setter
-	private boolean isDirty;
+	private final int maxActions;
 
 	public UserActions(int maxActions, int actionsPerformed, int lastDay)
 	{
@@ -75,20 +72,36 @@ public class UserActions
 
 	/**
 	 * Sets the number of actions performed.
+	 * <p>
+	 * Actions cannot go over max actions and will be capped.
 	 *
 	 * @param actions The number of actions.
 	 * @param today   The current day from Epoch.
-	 * @return The saved action count for the give user.
+	 * @return True if the action count or last day was changed, false otherwise.
 	 */
-	public int setCount(int actions, int today)
+	public boolean setCount(int actions, int today)
 	{
-		if (today != lastDay || actions != actionsPerformed)
+		actions = Math.min(actions, maxActions);
+
+		if (actions != actionsPerformed || today != lastDay)
 		{
-			isDirty = true;
+			actionsPerformed = actions;
+			lastDay = today;
+			return true;
 		}
-		lastDay = today;
-		actionsPerformed = actions;
-		return actionsPerformed;
+
+		return false;
+	}
+
+	/**
+	 * Sets the number of actions performed to max.
+	 *
+	 * @param today The current day from Epoch.
+	 * @return True if the action count or last day was changed, false otherwise.
+	 */
+	public boolean setCountToMax(int today)
+	{
+		return setCount(maxActions, today);
 	}
 
 	/**
@@ -96,19 +109,11 @@ public class UserActions
 	 *
 	 * @param actions The number of actions to add.
 	 * @param today   The current day from Epoch.
-	 * @return The saved action count.
+	 * @return True if the action count or last day was changed, false otherwise.
 	 */
-	public int addCount(int actions, int today)
+	public boolean addCount(int actions, int today)
 	{
-		final int oldCount = getCount(today);
-		if (oldCount < maxActions)
-		{
-			return setCount(actions + oldCount, today);
-		}
-		else
-		{
-			return oldCount;
-		}
+		return setCount(actions + getCount(today), today);
 	}
 
 	/**
@@ -122,6 +127,7 @@ public class UserActions
 		{
 			return 0;
 		}
+
 		return actionsPerformed;
 	}
 

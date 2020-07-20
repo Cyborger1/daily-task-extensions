@@ -86,7 +86,8 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		if (!client.getUsername().equals(""))
+		String user = client.getUsername();
+		if (user != null && !user.equals(""))
 		{
 			loggingIn = true;
 			loadUserActions();
@@ -186,8 +187,10 @@ public class DailyTaskExtensionsPlugin extends Plugin
 				final int newCardCount = countTeleportCardsInInventory();
 				if (newCardCount > lastCardCount)
 				{
-					chronicleActions.addCount(newCardCount - lastCardCount, lastResetDay);
-					saveUserActions();
+					if (chronicleActions.addCount(newCardCount - lastCardCount, lastResetDay))
+					{
+						saveUserActions(DailyTaskExtensionsConfig.CHRONICLE, chronicleActions);
+					}
 				}
 				lastCardCount = newCardCount;
 			}
@@ -201,10 +204,9 @@ public class DailyTaskExtensionsPlugin extends Plugin
 			&& event.getType() == ChatMessageType.GAMEMESSAGE
 			&& event.getMessage().equals(CHRONICLE_MAXED_CHAT))
 		{
-			if (chronicleActions.getCount(lastResetDay) < TELEPORT_CARDS_MAX)
+			if (chronicleActions.setCountToMax(lastResetDay))
 			{
-				chronicleActions.setCount(TELEPORT_CARDS_MAX, lastResetDay);
-				saveUserActions();
+				saveUserActions(DailyTaskExtensionsConfig.CHRONICLE, chronicleActions);
 			}
 		}
 	}
@@ -235,25 +237,16 @@ public class DailyTaskExtensionsPlugin extends Plugin
 
 	private void loadUserActions()
 	{
-		String user = client.getUsername();
-		if (user == null || user.equals(""))
-		{
-			return;
-		}
-
 		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
 
 		chronicleActions = new UserActions(TELEPORT_CARDS_MAX, configManager.getConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE));
 	}
 
-	private synchronized void saveUserActions()
+	private synchronized void saveUserActions(String keyName, UserActions userActions)
 	{
-		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
-		if (chronicleActions.isDirty())
-		{
-			configManager.setConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE, chronicleActions.getConfigString());
-			chronicleActions.setDirty(false);
-		}
+		configManager.setConfiguration(
+			DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername(),
+			keyName, userActions.getConfigString());
 	}
 
 	/**
