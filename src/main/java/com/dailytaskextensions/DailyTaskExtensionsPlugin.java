@@ -86,8 +86,11 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		loggingIn = true;
-		loadUserActions();
+		if (!client.getUsername().equals(""))
+		{
+			loggingIn = true;
+			loadUserActions();
+		}
 		inChronicleShop = false;
 		lastCardCount = 0;
 		isPastDailyReset = false;
