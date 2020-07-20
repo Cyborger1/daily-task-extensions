@@ -50,13 +50,13 @@ public class UserActions
 		this(maxActions, 0, 0);
 	}
 
-	public UserActions(int maxActions, String settingString)
+	public UserActions(int maxActions, String configString)
 	{
 		this(maxActions);
 
-		if (settingString != null)
+		if (configString != null)
 		{
-			String[] parts = settingString.split(":");
+			String[] parts = configString.split(":");
 			if (parts.length == 2)
 			{
 				try
@@ -76,11 +76,11 @@ public class UserActions
 	/**
 	 * Sets the number of actions performed.
 	 *
-	 * @param today   The current day from Epoch.
 	 * @param actions The number of actions.
+	 * @param today   The current day from Epoch.
 	 * @return The saved action count for the give user.
 	 */
-	public int setCount(int today, int actions)
+	public int setCount(int actions, int today)
 	{
 		if (today != lastDay || actions != actionsPerformed)
 		{
@@ -94,16 +94,16 @@ public class UserActions
 	/**
 	 * Adds a number of actions to the action count.
 	 *
-	 * @param today   The current day from Epoch.
 	 * @param actions The number of actions to add.
+	 * @param today   The current day from Epoch.
 	 * @return The saved action count.
 	 */
-	public int addCount(int today, int actions)
+	public int addCount(int actions, int today)
 	{
 		final int oldCount = getCount(today);
 		if (oldCount < maxActions)
 		{
-			return setCount(today, actions + oldCount);
+			return setCount(actions + oldCount, today);
 		}
 		else
 		{
@@ -125,7 +125,7 @@ public class UserActions
 		return actionsPerformed;
 	}
 
-	public String toSettingString()
+	public String toConfigString()
 	{
 		return actionsPerformed + ":" + lastDay;
 	}

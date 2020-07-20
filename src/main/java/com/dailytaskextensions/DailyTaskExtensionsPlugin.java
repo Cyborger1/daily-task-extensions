@@ -188,7 +188,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 				final int newCardCount = countTeleportCardsInInventory();
 				if (newCardCount > lastCardCount)
 				{
-					chronicleActions.addCount(lastResetDay, newCardCount - lastCardCount);
+					chronicleActions.addCount(newCardCount - lastCardCount, lastResetDay);
 					saveUserActions();
 				}
 				lastCardCount = newCardCount;
@@ -205,7 +205,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		{
 			if (chronicleActions.getCount(lastResetDay) < TELEPORT_CARDS_MAX)
 			{
-				chronicleActions.setCount(lastResetDay, TELEPORT_CARDS_MAX);
+				chronicleActions.setCount(TELEPORT_CARDS_MAX, lastResetDay);
 				saveUserActions();
 			}
 		}
@@ -253,7 +253,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
 		if (chronicleActions.isDirty())
 		{
-			configManager.setConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE, chronicleActions.toSettingString());
+			configManager.setConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE, chronicleActions.toConfigString());
 			chronicleActions.setDirty(false);
 		}
 	}
