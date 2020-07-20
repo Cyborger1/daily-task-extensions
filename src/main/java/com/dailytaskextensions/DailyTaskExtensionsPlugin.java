@@ -62,6 +62,9 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	@Inject
 	private DailyTaskExtensionsConfig config;
 
+	@Inject
+	private ConfigManager configManager;
+
 	@Provides
 	DailyTaskExtensionsConfig provideConfig(ConfigManager configManager)
 	{
@@ -72,11 +75,11 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	private ChatMessageManager chatMessageManager;
 
 	private long lastReset;
-	private int lastDay;
+	private int lastResetDay;
 	private boolean loggingIn;
 	private boolean isPastDailyReset;
 
-	private UserActionsMap chronicleMap;
+	private UserActions chronicleActions;
 	private boolean inChronicleShop;
 	private int lastCardCount;
 
@@ -84,7 +87,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		loggingIn = true;
-		chronicleMap = new UserActionsMap(TELEPORT_CARDS_MAX, config.getChronicleBoughtJSON());
+		loadUserActions();
 		inChronicleShop = false;
 		lastCardCount = 0;
 		isPastDailyReset = false;
@@ -94,11 +97,17 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		lastReset = 0L;
-		lastDay = 0;
-		chronicleMap = null;
+		lastResetDay = 0;
+		chronicleActions = null;
 		inChronicleShop = false;
 		lastCardCount = 0;
 		isPastDailyReset = false;
+	}
+
+	@Subscribe
+	public void onUsernameChanged(UsernameChanged event)
+	{
+		loadUserActions();
 	}
 
 	@Subscribe
@@ -137,7 +146,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		{
 			// Round down to the nearest day
 			lastReset = currentTime - (currentTime % ONE_DAY);
-			lastDay = (int) (lastReset / ONE_DAY);
+			lastResetDay = (int) (lastReset / ONE_DAY);
 			loggingIn = false;
 
 			if (config.showChronicle())
@@ -179,8 +188,8 @@ public class DailyTaskExtensionsPlugin extends Plugin
 				final int newCardCount = countTeleportCardsInInventory();
 				if (newCardCount > lastCardCount)
 				{
-					chronicleMap.addCountForUser(client.getUsername(), lastDay, newCardCount - lastCardCount);
-					putChronicleMapInConfig();
+					chronicleActions.addCount(lastResetDay, newCardCount - lastCardCount);
+					saveUserActions();
 				}
 				lastCardCount = newCardCount;
 			}
@@ -194,12 +203,10 @@ public class DailyTaskExtensionsPlugin extends Plugin
 			&& event.getType() == ChatMessageType.GAMEMESSAGE
 			&& event.getMessage().equals(CHRONICLE_MAXED_CHAT))
 		{
-			final String user = client.getUsername();
-			final ActionsPerformedCounter cards = chronicleMap.getCountForUser(user, lastDay);
-			if (cards.getActionsPerformed() < TELEPORT_CARDS_MAX)
+			if (chronicleActions.getCount(lastResetDay) < TELEPORT_CARDS_MAX)
 			{
-				chronicleMap.setCountForUser(user, lastDay, TELEPORT_CARDS_MAX);
-				putChronicleMapInConfig();
+				chronicleActions.setCount(lastResetDay, TELEPORT_CARDS_MAX);
+				saveUserActions();
 			}
 		}
 	}
@@ -207,9 +214,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	private void checkChronicle()
 	{
 		// Getter automatically resets to 0 if a day has passed
-		final ActionsPerformedCounter cardCount = chronicleMap.getCountForUser(client.getUsername(), lastDay, false);
-		final int cardsLeft = TELEPORT_CARDS_MAX -
-			(cardCount != null ? cardCount.getActionsPerformed() : 0);
+		final int cardsLeft = TELEPORT_CARDS_MAX - chronicleActions.getCount(lastResetDay);
 		if (cardsLeft > 0)
 		{
 			sendChatMessage(String.format(CHRONICLE_MESSAGE, cardsLeft));
@@ -230,15 +235,26 @@ public class DailyTaskExtensionsPlugin extends Plugin
 				.build());
 	}
 
-	/**
-	 * Puts the contents of the chronicle map in the hidden config field if dirty.
-	 */
-	private synchronized void putChronicleMapInConfig()
+	private void loadUserActions()
 	{
-		if (chronicleMap.isDirty())
+		String user = client.getUsername();
+		if (user == null || user.equals(""))
 		{
-			config.setChronicleBoughtJSON(chronicleMap.getJSONString());
-			chronicleMap.setDirty(false);
+			return;
+		}
+
+		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
+
+		chronicleActions = new UserActions(TELEPORT_CARDS_MAX, configManager.getConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE));
+	}
+
+	private synchronized void saveUserActions()
+	{
+		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
+		if (chronicleActions.isDirty())
+		{
+			configManager.setConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE, chronicleActions.toSettingString());
+			chronicleActions.setDirty(false);
 		}
 	}
 
