@@ -107,13 +107,13 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		final GameState state = event.getGameState();
 		if (state == GameState.LOGGING_IN || state == GameState.HOPPING)
 		{
-			loggingIn = true;
-			if (state == GameState.HOPPING)
+			if (state == GameState.LOGGING_IN)
 			{
-				isPastDailyReset = false;
-				inChronicleShop = false;
-				lastCardCount = 0;
+				loggingIn = true;
 			}
+			isPastDailyReset = false;
+			inChronicleShop = false;
+			lastCardCount = 0;
 		}
 	}
 

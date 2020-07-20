@@ -106,7 +106,7 @@ public class UserActionsMap
 		final int oldCount = actionsCounter.getActionsPerformed();
 		if (oldCount < maxActions)
 		{
-			return setCountForUser(user, actions + oldCount, today);
+			return setCountForUser(user, today, actions + oldCount);
 		}
 		else
 		{
