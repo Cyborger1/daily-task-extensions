@@ -189,7 +189,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 				{
 					if (chronicleActions.addCount(newCardCount - lastCardCount, lastResetDay))
 					{
-						saveUserActions(DailyTaskExtensionsConfig.CHRONICLE, chronicleActions);
+						saveUserActions(DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME, chronicleActions);
 					}
 				}
 				lastCardCount = newCardCount;
@@ -206,7 +206,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		{
 			if (chronicleActions.setCountToMax(lastResetDay))
 			{
-				saveUserActions(DailyTaskExtensionsConfig.CHRONICLE, chronicleActions);
+				saveUserActions(DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME, chronicleActions);
 			}
 		}
 	}
@@ -239,7 +239,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	{
 		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
 
-		chronicleActions = new UserActions(TELEPORT_CARDS_MAX, configManager.getConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE));
+		chronicleActions = new UserActions(TELEPORT_CARDS_MAX, configManager.getConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME));
 	}
 
 	private synchronized void saveUserActions(String keyName, UserActions userActions)

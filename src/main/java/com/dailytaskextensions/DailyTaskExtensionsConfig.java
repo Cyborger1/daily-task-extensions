@@ -33,7 +33,7 @@ import net.runelite.client.config.ConfigItem;
 public interface DailyTaskExtensionsConfig extends Config
 {
 	String CONFIG_GROUP = "dailytaskextensions";
-	String CHRONICLE = "chronicle";
+	String CHRONICLE_KEY_NAME = "chronicleCardsBought";
 
 	@ConfigItem(
 		keyName = "showChronicle",
