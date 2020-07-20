@@ -40,9 +40,9 @@ public class UserActions
 
 	public UserActions(int maxActions, int actionsPerformed, int lastDay)
 	{
+		this.maxActions = maxActions;
 		this.actionsPerformed = actionsPerformed;
 		this.lastDay = lastDay;
-		this.maxActions = maxActions;
 	}
 
 	public UserActions(int maxActions)
@@ -125,7 +125,10 @@ public class UserActions
 		return actionsPerformed;
 	}
 
-	public String toConfigString()
+	/**
+	 * Gets the string representation of this object to be saved in the Runelite config.
+	 */
+	public String getConfigString()
 	{
 		return actionsPerformed + ":" + lastDay;
 	}

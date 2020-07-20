@@ -253,7 +253,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
 		if (chronicleActions.isDirty())
 		{
-			configManager.setConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE, chronicleActions.toConfigString());
+			configManager.setConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE, chronicleActions.getConfigString());
 			chronicleActions.setDirty(false);
 		}
 	}
