@@ -29,9 +29,12 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("dailytaskextensions")
+@ConfigGroup(DailyTaskExtensionsConfig.CONFIG_GROUP)
 public interface DailyTaskExtensionsConfig extends Config
 {
+	String CONFIG_GROUP = "dailytaskextensions";
+	String CHRONICLE_KEY_NAME = "chronicleCardsBought";
+
 	@ConfigItem(
 		keyName = "showChronicle",
 		name = "Show Chronicle Teleport Cards",
@@ -41,23 +44,4 @@ public interface DailyTaskExtensionsConfig extends Config
 	{
 		return true;
 	}
-
-	@ConfigItem(
-		keyName = "chronicleBoughtJSON",
-		name = "",
-		description = "",
-		hidden = true
-	)
-	default String getChronicleBoughtJSON()
-	{
-		return "{}";
-	}
-
-	@ConfigItem(
-		keyName = "chronicleBoughtJSON",
-		name = "",
-		description = "",
-		hidden = true
-	)
-	void setChronicleBoughtJSON(String json);
 }
