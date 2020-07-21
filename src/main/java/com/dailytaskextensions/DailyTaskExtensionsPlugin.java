@@ -79,7 +79,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 	private boolean loggingIn;
 	private boolean isPastDailyReset;
 
-	private UserActions chronicleActions;
+	private DailyUserActions chronicleActions;
 	private boolean inChronicleShop;
 	private int lastCardCount;
 
@@ -90,7 +90,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		if (user != null && !user.equals(""))
 		{
 			loggingIn = true;
-			loadUserActions();
+			loadDailyUserActions();
 		}
 		inChronicleShop = false;
 		lastCardCount = 0;
@@ -116,7 +116,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		{
 			if (state == GameState.LOGGING_IN)
 			{
-				loadUserActions();
+				loadDailyUserActions();
 				loggingIn = true;
 			}
 			isPastDailyReset = false;
@@ -189,7 +189,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 				{
 					if (chronicleActions.addCount(newCardCount - lastCardCount, lastResetDay))
 					{
-						saveUserActions(DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME, chronicleActions);
+						saveDailyUserActions(DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME, chronicleActions);
 					}
 				}
 				lastCardCount = newCardCount;
@@ -206,7 +206,7 @@ public class DailyTaskExtensionsPlugin extends Plugin
 		{
 			if (chronicleActions.setCountToMax(lastResetDay))
 			{
-				saveUserActions(DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME, chronicleActions);
+				saveDailyUserActions(DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME, chronicleActions);
 			}
 		}
 	}
@@ -235,18 +235,18 @@ public class DailyTaskExtensionsPlugin extends Plugin
 				.build());
 	}
 
-	private void loadUserActions()
+	private void loadDailyUserActions()
 	{
 		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
 
-		chronicleActions = new UserActions(TELEPORT_CARDS_MAX, configManager.getConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME));
+		chronicleActions = new DailyUserActions(TELEPORT_CARDS_MAX, configManager.getConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME));
 	}
 
-	private synchronized void saveUserActions(String keyName, UserActions userActions)
+	private synchronized void saveDailyUserActions(String keyName, DailyUserActions actions)
 	{
 		configManager.setConfiguration(
 			DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername(),
-			keyName, userActions.getConfigString());
+			keyName, actions.getConfigString());
 	}
 
 	/**

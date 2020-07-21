@@ -27,7 +27,7 @@ package com.dailytaskextensions;
 
 import lombok.Getter;
 
-public class UserActions
+public class DailyUserActions
 {
 	private int actionsPerformed;
 	private int lastDay;
@@ -35,19 +35,19 @@ public class UserActions
 	@Getter
 	private final int maxActions;
 
-	public UserActions(int maxActions, int actionsPerformed, int lastDay)
+	public DailyUserActions(int maxActions, int actionsPerformed, int lastDay)
 	{
 		this.maxActions = maxActions;
 		this.actionsPerformed = actionsPerformed;
 		this.lastDay = lastDay;
 	}
 
-	public UserActions(int maxActions)
+	public DailyUserActions(int maxActions)
 	{
 		this(maxActions, 0, 0);
 	}
 
-	public UserActions(int maxActions, String configString)
+	public DailyUserActions(int maxActions, String configString)
 	{
 		this(maxActions);
 
