@@ -11,7 +11,7 @@ Feel free to suggest more.
 
 ### Daily Chronicle
 
-Remind you when you login to go see Diango and
+Reminds you when you login to go see Diango and
 buy your daily teleport cards.
 
 There may be uncaught issues with how this one
