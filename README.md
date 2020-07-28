@@ -2,7 +2,7 @@
 
 Hosts additional daily tasks that would are too niche
 or difficult to implement for Runelite's built-in
-Daily Task Indicators plugin.
+[Daily Task Indicator plugin](https://github.com/runelite/runelite/wiki/Daily-Task-Indicator).
 
 Currently only has one extra task.
 Feel free to suggest more.
