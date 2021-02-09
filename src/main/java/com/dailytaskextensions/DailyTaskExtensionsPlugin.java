@@ -246,16 +246,13 @@ public class DailyTaskExtensionsPlugin extends Plugin
 
 	private void loadDailyUserActions()
 	{
-		String base = DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername();
-
-		chronicleActions = new DailyUserActions(TELEPORT_CARDS_MAX, configManager.getConfiguration(base, DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME));
+		chronicleActions = new DailyUserActions(TELEPORT_CARDS_MAX,
+			configManager.getRSProfileConfiguration(DailyTaskExtensionsConfig.CONFIG_GROUP, DailyTaskExtensionsConfig.CHRONICLE_KEY_NAME));
 	}
 
 	private synchronized void saveDailyUserActions(String keyName, DailyUserActions actions)
 	{
-		configManager.setConfiguration(
-			DailyTaskExtensionsConfig.CONFIG_GROUP + "." + client.getUsername(),
-			keyName, actions.getConfigString());
+		configManager.setRSProfileConfiguration(DailyTaskExtensionsConfig.CONFIG_GROUP, keyName, actions.getConfigString());
 	}
 
 	/**
